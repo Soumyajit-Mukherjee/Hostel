@@ -1,0 +1,182 @@
+/* Page background styling */
+/* Overlay to darken the background image */
+h1 {
+    color: sky;
+    font-size: 36px;
+    margin-top:60px;
+    text-shadow: 0 0 5px #90ee90, 0 0 10px #90ee90, 0 0 20px #90ee90;
+    animation: glow 1s ease-in-out infinite alternate;
+}
+
+/* Glowing animation keyframes */
+@keyframes glow {
+    from {
+        text-shadow: 0 0 5px #90ee90, 0 0 10px #90ee90, 0 0 15px #90ee90;
+    }
+    to {
+        text-shadow: 0 0 10px #90ee90, 0 0 20px #90ee90, 0 0 30px #90ee90;
+    }
+}
+
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 0.5 = 50% opacity */
+    z-index: 0;
+}
+
+/* Put actual content above the overlay */
+body.centered-bg > *:not(.overlay) {
+    position: relative;
+    z-index: 1;
+}
+
+
+.centered-bg {
+    background-image: url("../images/b. t. mens'.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Main heading */
+h1 {
+    color: white;
+    font-size: 36px;
+    margin-top: 30px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Login box container */
+.login-box {
+    background-color: #f2f2f2;
+    width: 300px;
+    padding: 30px;
+    margin-top: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+}
+
+/* Title inside login box */
+.login-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Input fields styling */
+input[type="text"],
+input[type="password"] {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+}
+
+/* Button group (e.g., login options) */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: rgba(255, 255, 255, 0.85);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    margin-top: 50px;
+}
+
+/* General button styling */
+.btn {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 20px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    transition: background-color 0.3s ease-in-out;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Table styling */
+table {
+    width: 90%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+table th,
+table td {
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+}
+
+table th {
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+}
+
+/* Back & Logout button container */
+.header-buttons {
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+/* Individual logout button style */
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 16px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #b02a37;
+}
+
+/* Responsive enhancements */
+@media screen and (max-width: 768px) {
+    .button-group,
+    .login-box,
+    table {
+        width: 95%;
+    }
+
+    .header-buttons {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+}
