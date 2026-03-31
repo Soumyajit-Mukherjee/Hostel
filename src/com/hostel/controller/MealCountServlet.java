@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 import jakarta.servlet.ServletException;
@@ -17,10 +18,6 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/MealCountServlet")
 public class MealCountServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/hostel_management";
-	private static final String DB_USER = "root";
-	private static final String DB_PASS = "Soumyajit@123"; // Replace with your actual DB password
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -46,15 +43,37 @@ public class MealCountServlet extends HttpServlet {
 			date = LocalDate.now();
 		}
 
+		Connection conn = null;
+		PreparedStatement getIdStmt = null;
+		ResultSet idRs = null;
+		PreparedStatement countStmt = null;
+		ResultSet countRs = null;
+		PreparedStatement insertStmt = null;
+
 		try {
+			// 1. Load the Driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+
+			// 2. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
+
+			// 3. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
+
+			// 4. Connect to the Database
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
 			// Get student_id of the manager/prefect
 			String getIdSql = "SELECT id FROM student WHERE username = ?";
-			PreparedStatement getIdStmt = conn.prepareStatement(getIdSql);
+			getIdStmt = conn.prepareStatement(getIdSql);
 			getIdStmt.setString(1, username);
-			ResultSet idRs = getIdStmt.executeQuery();
+			idRs = getIdStmt.executeQuery();
 
 			int studentId = -1;
 			if (idRs.next()) {
@@ -65,8 +84,8 @@ public class MealCountServlet extends HttpServlet {
 
 			// Count boarders whose meal_status is ON
 			String countSql = "SELECT COUNT(*) AS total FROM student WHERE meal_status = 'on'";
-			PreparedStatement countStmt = conn.prepareStatement(countSql);
-			ResultSet countRs = countStmt.executeQuery();
+			countStmt = conn.prepareStatement(countSql);
+			countRs = countStmt.executeQuery();
 
 			int totalMeals = 0;
 			if (countRs.next()) {
@@ -75,7 +94,7 @@ public class MealCountServlet extends HttpServlet {
 
 			// Insert into meal_count table using the SELECTED date
 			String insertSql = "INSERT INTO meal_count (student_id, manager_username, meal_date, meal_type, total_meals) VALUES (?, ?, ?, ?, ?)";
-			PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+			insertStmt = conn.prepareStatement(insertSql);
 			insertStmt.setInt(1, studentId);
 			insertStmt.setString(2, username);
 			insertStmt.setDate(3, java.sql.Date.valueOf(date)); // Saves the exact date chosen in UI
@@ -90,17 +109,47 @@ public class MealCountServlet extends HttpServlet {
 				response.sendRedirect("pages/count_meal.jsp?msg=error");
 			}
 
-			// Clean up database resources
-			idRs.close();
-			getIdStmt.close();
-			countRs.close();
-			countStmt.close();
-			insertStmt.close();
-			conn.close();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect("pages/count_meal.jsp?msg=exception");
+		} finally {
+			// 5. Safely close database connections to prevent memory leaks on Render
+			try {
+				if (idRs != null)
+					idRs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (getIdStmt != null)
+					getIdStmt.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (countRs != null)
+					countRs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (countStmt != null)
+					countStmt.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (insertStmt != null)
+					insertStmt.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
