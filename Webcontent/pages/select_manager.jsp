@@ -8,7 +8,7 @@
 
     // 2. Security Kick-out if not logged in
     if (currentUser == null) {
-        response.sendRedirect("../index.jsp");
+        response.sendRedirect("index.jsp");
         return;
     }
 
@@ -30,7 +30,21 @@
     String searchUsername = request.getParameter("searchUsername");
     student student = null;
     Class.forName("com.mysql.cj.jdbc.Driver");
-    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hostel_management", "root", "Soumyajit@123");
+
+    // 2. Fetch Cloud Credentials (from Render Environment Variables)
+    String dbUrl = System.getenv("DB_URL");
+    String dbUser = System.getenv("DB_USER");
+    String dbPass = System.getenv("DB_PASS");
+
+    // 3. Fallback for Localhost (if cloud variables aren't found)
+    if (dbUrl == null || dbUrl.isEmpty()) {
+        dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+        dbUser = "root";
+        dbPass = "Soumyajit@123";
+    }
+
+    // 4. Connect to the Database
+    Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
     if (searchUsername != null && !searchUsername.isEmpty()) {
         studentDAO dao = new studentDAO(conn);
