@@ -289,15 +289,33 @@
                     <tbody>
                         
                         <%
+                            Connection conn = null;
+                            PreparedStatement ps = null;
+                            ResultSet rs = null;
+
                             try {
+                                // 1. Load the Driver
                                 Class.forName("com.mysql.cj.jdbc.Driver");
-                                Connection con = DriverManager.getConnection(
-                                    "jdbc:mysql://localhost:3306/hostel_management", "root", "Soumyajit@123");
+
+                                // 2. Fetch Cloud Credentials (from Render Environment Variables)
+                                String dbUrl = System.getenv("DB_URL");
+                                String dbUser = System.getenv("DB_USER");
+                                String dbPass = System.getenv("DB_PASS");
+
+                                // 3. Fallback for Localhost (if cloud variables aren't found)
+                                if (dbUrl == null || dbUrl.isEmpty()) {
+                                    dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+                                    dbUser = "root";
+                                    dbPass = "Soumyajit@123";
+                                }
+
+                                // 4. Connect to the Database
+                                conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
                                 
                                 // Assuming table name is 'students' or 'boarders', adjust if needed
                                 String sql = "SELECT * FROM student ORDER BY id ASC"; 
-                                PreparedStatement ps = con.prepareStatement(sql);
-                                ResultSet rs = ps.executeQuery();
+                                ps = conn.prepareStatement(sql);
+                                rs = ps.executeQuery();
                                 
                                 while (rs.next()) {
                                     // Extract data for logic checks
@@ -353,9 +371,6 @@
                                     </tr>
                         <%
                                 }
-                                rs.close();
-                                ps.close();
-                                con.close();
                             } catch (Exception e) {
                                 e.printStackTrace();
                         %>
@@ -367,6 +382,11 @@
                                     </td>
                                 </tr>
                         <%
+                            } finally {
+                                // FIX: Safely close resources using the correct variable names!
+                                try { if(rs != null) rs.close(); } catch(SQLException ex) {}
+                                try { if(ps != null) ps.close(); } catch(SQLException ex) {}
+                                try { if(conn != null) conn.close(); } catch(SQLException ex) {}
                             }
                         %>
                         </tbody>
