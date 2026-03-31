@@ -17,26 +17,42 @@ import jakarta.servlet.http.HttpSession;
 public class adminLoginServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/hostel_management";
-	private static final String DB_USER = "root";
-	private static final String DB_PASS = "Soumyajit@123"; // ← Replace with yours
-
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
 		String username = request.getParameter("username");
 		String password = request.getParameter("password");
 
+		Connection conn = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
 		try {
+			// 1. Load the Driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
-			Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+			// 2. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
+
+			// 3. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
+
+			// 4. Connect to the Database
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
+
+			// 5. Execute Login Query
 			String query = "SELECT * FROM admin WHERE username=? AND password=?";
-			PreparedStatement ps = conn.prepareStatement(query);
+			ps = conn.prepareStatement(query);
 			ps.setString(1, username);
 			ps.setString(2, password);
 
-			ResultSet rs = ps.executeQuery();
+			rs = ps.executeQuery();
 
 			if (rs.next()) {
 				// Get the session
@@ -56,12 +72,29 @@ public class adminLoginServlet extends HttpServlet {
 				response.sendRedirect("pages/error.jsp");
 			}
 
-			rs.close();
-			ps.close();
-			conn.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect("pages/error.jsp");
+		} finally {
+			// 6. Safely close database connections to prevent memory leaks on Render
+			try {
+				if (rs != null)
+					rs.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				if (ps != null)
+					ps.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
