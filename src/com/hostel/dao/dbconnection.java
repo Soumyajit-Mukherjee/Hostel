@@ -10,9 +10,9 @@ public class dbconnection {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
 			// Updated for Railway Cloud
-			String url = "jdbc:mysql://localhost:3306/hostel_management";
+			String url = "mysql://root:EOUuPFOEhyWNWwvvmgFgArCxbngXAsAs@hopper.proxy.rlwy.net:42073/railway";
 			String user = "root";
-			String pass = "Soumyajit@123";
+			String pass = "EOUuPFOEhyWNWwvvmgFgArCxbngXAsAs";
 
 			conn = DriverManager.getConnection(url, user, pass);
 			System.out.println("Success: Connected to MySQL!");
