@@ -15,21 +15,37 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/BoarderMealChargeApprovalServlet")
 public class BoarderMealChargeApprovalServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/hostel_management";
-	private static final String DB_USER = "root";
-	private static final String DB_PASS = "Soumyajit@123";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
 		String action = request.getParameter("action"); // "approve" or "reject"
-		String username = request.getParameter("username"); // auditor who submitted
+		String username = request.getParameter("username"); // boarder who submitted
 
-		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
+		Connection conn = null;
+
+		try {
+			// 1. Load the Driver
+			Class.forName("com.mysql.cj.jdbc.Driver");
+
+			// 2. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
+
+			// 3. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
+
+			// 4. Connect to the Database
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
 			int rowsAffected = 0;
 
-			if (action.equalsIgnoreCase("approve")) {
+			if ("approve".equalsIgnoreCase(action)) {
 				String getAmountSQL = "SELECT amount FROM boarder_meal_charge WHERE username = ? and status = 'pending'";
 				PreparedStatement getPs = conn.prepareStatement(getAmountSQL);
 				getPs.setString(1, username);
@@ -39,8 +55,8 @@ public class BoarderMealChargeApprovalServlet extends HttpServlet {
 					double amount = rs.getDouble("amount");
 					rs.close();
 					getPs.close();
-					String updateStudentSQL = "UPDATE student SET meal_charge = meal_charge - ? WHERE username = ?";
 
+					String updateStudentSQL = "UPDATE student SET meal_charge = meal_charge - ? WHERE username = ?";
 					PreparedStatement updateStudentPs = conn.prepareStatement(updateStudentSQL);
 					updateStudentPs.setDouble(1, amount);
 					updateStudentPs.setString(2, username);
@@ -61,7 +77,7 @@ public class BoarderMealChargeApprovalServlet extends HttpServlet {
 					getPs.close();
 				}
 
-			} else if (action.equalsIgnoreCase("reject")) {
+			} else if ("reject".equalsIgnoreCase(action)) {
 				// Just reject the pending charge
 				String rejectSQL = "UPDATE boarder_meal_charge SET status = 'rejected' WHERE username = ? AND status = 'pending'";
 				PreparedStatement ps = conn.prepareStatement(rejectSQL);
@@ -80,6 +96,15 @@ public class BoarderMealChargeApprovalServlet extends HttpServlet {
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect("pages/online_meal_charge.jsp?msg=exception");
+		} finally {
+			// 5. Safely close database connections to prevent memory leaks on Render
+			try {
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
