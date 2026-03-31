@@ -15,9 +15,6 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet("/MealChargeApprovalServlet")
 public class MealChargeApprovalServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/hostel_management";
-	private static final String DB_USER = "root";
-	private static final String DB_PASS = "Soumyajit@123";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -25,7 +22,26 @@ public class MealChargeApprovalServlet extends HttpServlet {
 		String action = request.getParameter("action"); // "approve" or "reject"
 		String username = request.getParameter("username"); // auditor who submitted
 
-		try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
+		Connection conn = null;
+
+		try {
+			// 1. Load the Driver
+			Class.forName("com.mysql.cj.jdbc.Driver");
+
+			// 2. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
+
+			// 3. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
+
+			// 4. Connect to the Database
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
 			int rowsAffected = 0;
 
@@ -43,7 +59,6 @@ public class MealChargeApprovalServlet extends HttpServlet {
 
 					// Step 2: Add amount to all students
 					String updateStudentSQL = "UPDATE student SET meal_charge = COALESCE(meal_charge, 0) + ?";
-
 					PreparedStatement updateStudentPs = conn.prepareStatement(updateStudentSQL);
 					updateStudentPs.setDouble(1, amount);
 					int updatedCount = updateStudentPs.executeUpdate();
@@ -83,6 +98,15 @@ public class MealChargeApprovalServlet extends HttpServlet {
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect("pages/update_meal_charge.jsp?msg=exception");
+		} finally {
+			// 5. Safely close database connections to prevent memory leaks on Render
+			try {
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
