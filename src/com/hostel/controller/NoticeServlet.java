@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,11 +16,6 @@ import jakarta.servlet.http.HttpSession;
 @WebServlet("/NoticeServlet")
 public class NoticeServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-
-	// Database Credentials
-	private static final String DB_URL = "jdbc:mysql://localhost:3306/hostel_management";
-	private static final String DB_USER = "root";
-	private static final String DB_PASSWORD = "Soumyajit@123";
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -41,77 +37,102 @@ public class NoticeServlet extends HttpServlet {
 
 		String redirectPage = "pages/manage_notices.jsp";
 
+		Connection conn = null;
+		PreparedStatement ps = null;
+
 		try {
-			// Load JDBC Driver
+			// 3. Load the Driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
-			// Open Database Connection
-			try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
+			// 4. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
 
-				PreparedStatement ps = null;
-				int rowsAffected = 0;
+			// 5. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
 
-				// 3. Route the logic based on the action securely
-				if ("add".equals(action)) {
+			// 6. Connect to the Database
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
-					// --- CREATE NEW NOTICE (Saves the Author) ---
-					String sql = "INSERT INTO notices (notice_text, posted_by) VALUES (?, ?)";
-					ps = conn.prepareStatement(sql);
-					ps.setString(1, noticeText);
-					ps.setString(2, currentUser); // Tag the notice with the logged-in user
-					ps.executeUpdate();
+			int rowsAffected = 0;
 
-					response.sendRedirect(redirectPage + "?msg=added");
+			// 7. Route the logic based on the action securely
+			if ("add".equals(action)) {
 
-				} else if ("update".equals(action)) {
+				// --- CREATE NEW NOTICE (Saves the Author) ---
+				String sql = "INSERT INTO notices (notice_text, posted_by) VALUES (?, ?)";
+				ps = conn.prepareStatement(sql);
+				ps.setString(1, noticeText);
+				ps.setString(2, currentUser); // Tag the notice with the logged-in user
+				ps.executeUpdate();
 
-					// --- UPDATE EXISTING NOTICE (Strictly limits to Author) ---
-					int noticeId = Integer.parseInt(noticeIdStr);
-					String sql = "UPDATE notices SET notice_text = ? WHERE id = ? AND posted_by = ?";
-					ps = conn.prepareStatement(sql);
-					ps.setString(1, noticeText);
-					ps.setInt(2, noticeId);
-					ps.setString(3, currentUser); // Security barrier
+				response.sendRedirect(redirectPage + "?msg=added");
 
-					rowsAffected = ps.executeUpdate();
+			} else if ("update".equals(action)) {
 
-					// If rowsAffected is 0, it means the ID didn't exist OR they aren't the author
-					if (rowsAffected > 0) {
-						response.sendRedirect(redirectPage + "?msg=updated");
-					} else {
-						response.sendRedirect(redirectPage + "?msg=error");
-					}
+				// --- UPDATE EXISTING NOTICE (Strictly limits to Author) ---
+				int noticeId = Integer.parseInt(noticeIdStr);
+				String sql = "UPDATE notices SET notice_text = ? WHERE id = ? AND posted_by = ?";
+				ps = conn.prepareStatement(sql);
+				ps.setString(1, noticeText);
+				ps.setInt(2, noticeId);
+				ps.setString(3, currentUser); // Security barrier
 
-				} else if ("delete".equals(action)) {
+				rowsAffected = ps.executeUpdate();
 
-					// --- DELETE NOTICE (Strictly limits to Author) ---
-					int noticeId = Integer.parseInt(noticeIdStr);
-					String sql = "DELETE FROM notices WHERE id = ? AND posted_by = ?";
-					ps = conn.prepareStatement(sql);
-					ps.setInt(1, noticeId);
-					ps.setString(2, currentUser); // Security barrier
-
-					rowsAffected = ps.executeUpdate();
-
-					if (rowsAffected > 0) {
-						response.sendRedirect(redirectPage + "?msg=deleted");
-					} else {
-						response.sendRedirect(redirectPage + "?msg=error");
-					}
-
+				// If rowsAffected is 0, it means the ID didn't exist OR they aren't the author
+				if (rowsAffected > 0) {
+					response.sendRedirect(redirectPage + "?msg=updated");
 				} else {
-					// Invalid action fallback
 					response.sendRedirect(redirectPage + "?msg=error");
 				}
 
-				// Close statement
-				if (ps != null) {
-					ps.close();
+			} else if ("delete".equals(action)) {
+
+				// --- DELETE NOTICE (Strictly limits to Author) ---
+				int noticeId = Integer.parseInt(noticeIdStr);
+				String sql = "DELETE FROM notices WHERE id = ? AND posted_by = ?";
+				ps = conn.prepareStatement(sql);
+				ps.setInt(1, noticeId);
+				ps.setString(2, currentUser); // Security barrier
+
+				rowsAffected = ps.executeUpdate();
+
+				if (rowsAffected > 0) {
+					response.sendRedirect(redirectPage + "?msg=deleted");
+				} else {
+					response.sendRedirect(redirectPage + "?msg=error");
 				}
+
+			} else {
+				// Invalid action fallback
+				response.sendRedirect(redirectPage + "?msg=error");
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.sendRedirect(redirectPage + "?msg=error");
+		} finally {
+			// 8. Safely close database connections to prevent memory leaks on Render
+			try {
+				if (ps != null) {
+					ps.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }
