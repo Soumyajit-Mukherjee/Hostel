@@ -6,7 +6,7 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 
 # 3. Copy WebContent (Check if your folder is WebContent or Webcontent!)
 # This copies JSPs, CSS, JS, and the WEB-INF folder
-COPY ./WebContent/ /usr/local/tomcat/webapps/ROOT/
+COPY ./Webcontent/ /usr/local/tomcat/webapps/ROOT/
 
 # 4. Copy compiled classes
 # Make sure your 'build/classes' folder actually contains your .class files
