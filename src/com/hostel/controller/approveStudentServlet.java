@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet("/approveStudentServlet")
 public class approveStudentServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -30,8 +31,23 @@ public class approveStudentServlet extends HttpServlet {
 		PreparedStatement psRoomUpdate = null;
 
 		try {
+			// 1. Load the Driver
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/hostel_management", "root", "Soumyajit@123");
+
+			// 2. Fetch Cloud Credentials (from Render Environment Variables)
+			String dbUrl = System.getenv("DB_URL");
+			String dbUser = System.getenv("DB_USER");
+			String dbPass = System.getenv("DB_PASS");
+
+			// 3. Fallback for Localhost (if cloud variables aren't found)
+			if (dbUrl == null || dbUrl.isEmpty()) {
+				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+				dbUser = "root";
+				dbPass = "Soumyajit@123";
+			}
+
+			// 4. Connect to the Database
+			con = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
 			if ("approve".equals(action)) {
 
@@ -44,6 +60,10 @@ public class approveStudentServlet extends HttpServlet {
 				while (roomRs.next()) {
 					availableRooms.add(roomRs.getInt("room_no"));
 				}
+
+				// Clean up local statement/resultset
+				roomRs.close();
+				roomStmt.close();
 
 				if (availableRooms.isEmpty()) {
 					request.setAttribute("error", "No rooms available for allotment.");
@@ -83,6 +103,7 @@ public class approveStudentServlet extends HttpServlet {
 			request.setAttribute("error", "Error occurred: " + e.getMessage());
 			request.getRequestDispatcher("pages/approve_students.jsp").forward(request, response);
 		} finally {
+			// 5. Safely close database connections to prevent memory leaks on Render
 			try {
 				if (psStudent != null)
 					psStudent.close();
