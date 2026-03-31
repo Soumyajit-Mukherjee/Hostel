@@ -354,7 +354,21 @@
                 try {
                     // 1. Connect to the database
                     Class.forName("com.mysql.cj.jdbc.Driver");
-                    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/hostel_management", "root", "Soumyajit@123");
+
+                    // 2. Fetch Cloud Credentials (from Render Environment Variables)
+                    String dbUrl = System.getenv("DB_URL");
+                    String dbUser = System.getenv("DB_USER");
+                    String dbPass = System.getenv("DB_PASS");
+
+                    // 3. Fallback for Localhost (if cloud variables aren't found)
+                    if (dbUrl == null || dbUrl.isEmpty()) {
+                        dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
+                        dbUser = "root";
+                        dbPass = "Soumyajit@123";
+                    }
+
+                    // 4. Connect to the Database
+                    Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 
                     // 2. Fetch all notices, newest first
                     String sql = "SELECT * FROM notices ORDER BY created_at DESC";
