@@ -1,4 +1,3 @@
-update the file 
 package com.hostel.controller;
 
 import java.io.IOException;
@@ -18,23 +17,11 @@ import jakarta.servlet.http.HttpSession;
 public class adminLoginServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-    // If someone tries to access the URL directly via GET, 
-    // just send them back to the login page.
-        response.sendRedirect("index.jsp"); 
-    }
-
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
 
         try {
             // 1. Load the Driver
@@ -44,13 +31,6 @@ public class adminLoginServlet extends HttpServlet {
             String dbUrl = System.getenv("DB_URL"); 
             String dbUser = System.getenv("DB_USER");
             String dbPass = System.getenv("DB_PASS");
-
-            // 3. Fallback for Localhost (if cloud variables aren't found)
-            if (dbUrl == null || dbUrl.isEmpty()) {
-                dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
-                dbUser = "root";
-                dbPass = "Soumyajit@123";
-            }
 
             // 4. Connect to the Database
             conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
