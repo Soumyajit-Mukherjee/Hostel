@@ -7,8 +7,8 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 # Create ROOT
 RUN mkdir -p /usr/local/tomcat/webapps/ROOT
 
-# Copy WebContent (FIXED CASE)
-COPY WebContent/ /usr/local/tomcat/webapps/ROOT/
+# Copy Webcontent (FIXED CASE)
+COPY Webcontent/ /usr/local/tomcat/webapps/ROOT/
 
 # Copy compiled classes
 COPY build/classes/ /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/
