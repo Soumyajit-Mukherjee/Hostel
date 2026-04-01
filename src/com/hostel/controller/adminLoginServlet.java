@@ -32,7 +32,7 @@ public class adminLoginServlet extends HttpServlet {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
 			// 2. Fetch Cloud Credentials (from Render Environment Variables)
-			String dbUrl = "jdbc:mysql://avnadmin:AVNS_LL2rbOBw-mOt8BId7a5@mysql-688ab9d-sommajeet-595a.a.aivencloud.com:13274/defaultdb?ssl-mode=REQUIRED";
+			String dbUrl = "jdbc:mysql://mysql-688ab9d-sommajeet-595a.a.aivencloud.com:13274/defaultdb";
             String dbUser = "avnadmin";
             String dbPass = "AVNS_LL2rbOBw-mOt8BId7a5";
 
