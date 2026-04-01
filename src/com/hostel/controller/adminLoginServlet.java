@@ -36,8 +36,6 @@ public class adminLoginServlet extends HttpServlet {
 			String dbUser = System.getenv("DB_USER");
 			String dbPass = System.getenv("DB_PASS");
 
-Connection conn = DriverManager.getConnection(url, user, pass);
-
 			// 3. Fallback for Localhost (if cloud variables aren't found)
 			if (dbUrl == null || dbUrl.isEmpty()) {
 				dbUrl = "jdbc:mysql://localhost:3306/hostel_management";
