@@ -356,9 +356,9 @@
                     Class.forName("com.mysql.cj.jdbc.Driver");
 
                     // 2. Fetch Cloud Credentials (from Render Environment Variables)
-                    String dbUrl = System.getenv("DB_URL");
-                    String dbUser = System.getenv("DB_USER");
-                    String dbPass = System.getenv("DB_PASS");
+                    String dbUrl = "jdbc:mysql://avnadmin:AVNS_LL2rbOBw-mOt8BId7a5@mysql-688ab9d-sommajeet-595a.a.aivencloud.com:13274/defaultdb?ssl-mode=REQUIRED";
+                    String dbUser = "avnadmin";
+                    String dbPass = "AVNS_LL2rbOBw-mOt8BId7a5";
 
                     // 3. Fallback for Localhost (if cloud variables aren't found)
                     if (dbUrl == null || dbUrl.isEmpty()) {
