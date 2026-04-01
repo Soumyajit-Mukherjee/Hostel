@@ -15,75 +15,82 @@ import jakarta.servlet.http.HttpSession;
 
 @WebServlet("/adminLoginServlet")
 public class adminLoginServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
 
-        try {
-            // 1. Load the Driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
+        // Define JDBC objects here to ensure they are accessible in the 'finally' block
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
 
-            // 2. Fetch Cloud Credentials (from Render Environment Variables)
-            String dbUrl = System.getenv("DB_URL"); 
-            String dbUser = System.getenv("DB_USER");
-            String dbPass = System.getenv("DB_PASS");
+        try {
+            // 1. Fetch Cloud Credentials (from Render Environment Variables)
+            String host = System.getenv("DB_HOST");
+            String port = System.getenv("DB_PORT");
+            String dbName = System.getenv("DB_NAME");
+            String user = System.getenv("DB_USER");
+            String pass = System.getenv("DB_PASS");
+            
+            // Construct URL with Aiven's mandatory SSL mode
+            String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName + "?sslmode=REQUIRED";
 
-            // 4. Connect to the Database
-            conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
+            // 2. Load the Driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
-            // 5. Execute Login Query
-            String query = "SELECT * FROM admin WHERE username=? AND password=?";
-            ps = conn.prepareStatement(query);
-            ps.setString(1, username);
-            ps.setString(2, password);
+            // 3. Connect to the Database
+            conn = DriverManager.getConnection(url, user, pass);
 
-            rs = ps.executeQuery();
+            // 4. Execute Login Query
+            String query = "SELECT * FROM admin WHERE username=? AND password=?";
+            ps = conn.prepareStatement(query);
+            ps.setString(1, username);
+            ps.setString(2, password);
 
-            if (rs.next()) {
-                // Get the session
-                HttpSession session = request.getSession();
+            rs = ps.executeQuery();
 
-                // Set the new admin username
-                session.setAttribute("username", username);
+            if (rs.next()) {
+                // Get the session
+                HttpSession session = request.getSession();
 
-                // DESTROY PREVIOUS ROLES ---
-                // This ensures that if an "auditor" or "mess prefect" logged out,
-                // their role is completely erased from this browser session.
-                session.removeAttribute("role");
+                // Set the admin username
+                session.setAttribute("username", username);
 
-                // Redirect to dashboard
-                response.sendRedirect("pages/admin_dashboard.jsp");
-            } else {
-                response.sendRedirect("pages/error.jsp");
-            }
+                // DESTROY PREVIOUS ROLES
+                // Ensures session cleanup for role-based access
+                session.removeAttribute("role");
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.sendRedirect("pages/error.jsp");
-        } finally {
-            // 6. Safely close database connections to prevent memory leaks on Render
-            try {
-                if (rs != null)
-                    rs.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                if (ps != null)
-                    ps.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                if (conn != null)
-                    conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
+                // Redirect to dashboard
+                response.sendRedirect("pages/admin_dashboard.jsp");
+            } else {
+                // Redirect to index with error parameter
+                response.sendRedirect("index.jsp?error=invalid");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("pages/error.jsp");
+        } finally {
+            // 5. Safely close database connections to prevent memory leaks on Render
+            try {
+                if (rs != null) rs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                if (ps != null) ps.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                if (conn != null) conn.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
