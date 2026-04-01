@@ -26,7 +26,7 @@ public class dbconnection {
 			}
 
 			// 4. Establish the Connection
-			conn = DriverManager.getConnection(url, user, pass);
+			conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
 			// System.out.println("Success: Connected to MySQL!");
 
 		} catch (Exception e) {
